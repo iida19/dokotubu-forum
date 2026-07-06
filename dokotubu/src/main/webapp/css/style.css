@@ -1,0 +1,208 @@
+@charset "UTF-8";
+
+
+body {
+	background-image: url("../img/bg_cat.png");
+	background-repeat: repeat;
+}
+
+
+.title {
+	margin-top: 70px;
+	text-align: center;
+	font-size: 30px;
+	font-weight: bold;
+	text-shadow: 2px 2px 4px #999;
+}
+
+
+.lg-area,
+.lgst-area,
+.rg-area,
+.ms-page {
+	display: flex;
+	width: 40%;
+	align-items: center;
+}
+
+
+.lg-area {
+	margin: 50px auto 0;
+	flex-direction: column;
+}
+
+.lg-area form {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	gap: 5px;
+}
+
+
+.rg-page {
+	margin-top: 70px;
+}
+
+.rg-button {
+	margin: 30px auto 0;
+	text-align: center;
+}
+
+.rg-area {
+	margin: 50px auto 0;
+	flex-direction: column;
+}
+
+.rg-area form {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	gap: 5px;
+}
+
+
+.lgst-area {
+	margin: 10px auto 0;
+	justify-content: center;
+	gap: 20px;
+}
+
+
+.text-area {
+	display: flex;
+	justify-content: center;
+	margin: 10px auto 0;
+	width: 80%;
+	gap: 20px;
+}
+
+.tweet-area form {
+	display: flex;
+	gap: 5px;
+	align-items: center;
+}
+
+.search-area {
+	display: flex;
+	flex-direction: column;
+}
+
+.search-area form {
+	display: flex;
+	gap: 5px;
+	align-items: center;
+}
+
+.a-button {
+	margin-top: 5px;
+	margin-left: auto;
+}
+
+
+.main-area {
+    display: flex;
+	flex-direction: column;
+	margin: 0px auto 0;
+	width: 70%;
+}
+
+table {
+	table-layout: fixed;
+	margin: 10px auto 0;
+	border-collapse: collapse;
+	width: 100%;
+}
+
+td {
+	height: 30px;
+	border-bottom: 1px solid #999;
+}
+
+td:nth-child(1) {
+    width: 120px;
+	font-weight: bold;
+}
+
+td:nth-child(2) {
+    width: auto;
+	font-size: 15px;
+}
+
+td:nth-child(3) {
+    width: 40px;
+    text-align: center;
+}
+
+tr {
+    transition: background-color 0.15s;
+}
+
+tr:hover {
+	background-color: rgba(224, 239, 255, 0.5);
+}
+
+.my-tweet {
+	color: #4682b4;
+}
+
+.d-button {
+	margin-top: 10px;
+	text-align: right;
+}
+
+.pb-area {
+	display: flex;
+	justify-content: center;
+	gap: 10px;
+	margin-top: 5px;
+}
+
+.ms-page {
+	display: flex;
+	flex-direction: column;
+	margin: 70px auto 0;
+}
+
+.ms-blank {
+	margin-top: 10px;
+	height: 20px;
+}
+
+
+.em {
+	margin-top: 10px;
+	height: 20px;
+	text-align: center;
+	color: red;
+}
+
+.ms {
+	margin-top: 10px;
+	height: 20px;
+	text-align: center;
+}
+
+.to-l-button {
+	text-align: center;
+}
+
+
+input[type="text"],
+input[type="password"] {
+	width: 200px;
+	height: 20px;
+}
+
+button,
+input[type="submit"] {
+    padding: 5px 10px;
+    border-radius: 6px;
+    border: 1px solid #999;
+    background: #eee;
+    cursor: pointer;
+}
+
+button:hover,
+input[type="submit"]:hover {
+    background: white;
+}
