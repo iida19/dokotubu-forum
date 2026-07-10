@@ -11,10 +11,9 @@
 <%@ page import="java.util.ArrayList" %>
 <%@ page import="dokotubu.Tubuyaki" %>
 <%
-	List<Tubuyaki> searchTubuyakiList = ( List<Tubuyaki> )session.getAttribute( "searchTubuyakiList" );
 	Tubuyaki[] showList = ( Tubuyaki[] )session.getAttribute( "showList" );
 	Integer showMenu = ( Integer )session.getAttribute( "showMenu" );
-	int nextOrNot = searchTubuyakiList.size()-showMenu*10;
+	boolean hasNext = ( boolean )session.getAttribute( "hasNext" );
 	String key = ( String )session.getAttribute( "key" );
 	if ( key == null ) {
 		key = "";
@@ -88,7 +87,7 @@
 			<%=em %>
 		</div>
 		
-		<% if ( searchTubuyakiList == null || searchTubuyakiList.isEmpty() ) { %>
+		<% if ( showList == null || showList[0] == null ) { %>
 			<% if ( em.isEmpty() ) { %>
 					<div class="ms">
 						"<%=key %>"を含むつぶやきはありません
@@ -155,7 +154,7 @@
 					</form>
 				<% } %>
 		
-				<% if ( nextOrNot > 10 ) { %>
+				<% if ( hasNext ) { %>
 					<form action="<%=request.getContextPath() %>/Dokotubu" method="post">
 						<input type="hidden" name="viewStatus" value="searching">
 						<button type="submit" name="action" value="nextPage">次へ</button>		

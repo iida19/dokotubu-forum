@@ -1,17 +1,9 @@
 package dokotubu;
 
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.FileReader;
-import java.io.FileWriter;
 import java.io.IOException;
-import java.io.PrintWriter;
-import java.util.ArrayList;
-import java.util.LinkedList;
 import java.util.List;
 
 import jakarta.servlet.RequestDispatcher;
-import jakarta.servlet.ServletContext;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.HttpServlet;
@@ -75,18 +67,21 @@ public class Dokotubu extends HttpServlet {
 			
 		}
 		
-		String tubuyakiFile = getServletContext().getRealPath( "/WEB-INF/data/tubuyaki.csv" );
-		List<Tubuyaki> searchTubuyakiList = new ArrayList<Tubuyaki>();
+		List<Tubuyaki> searchTubuyakiList = TubuyakiDAO.findByKeyword( key );
 		int showSize = 10;
 		Tubuyaki[] showList = new Tubuyaki[ showSize ];
 		int showMenu = 0;
 		
-		readAndSearch( searchTubuyakiList, tubuyakiFile, key );
 		cutTubuyaki( searchTubuyakiList, showList, showMenu );
+		
+		boolean hasNext = false;
+		if ( !searchTubuyakiList.isEmpty() ) {
+			hasNext = searchTubuyakiList.size()-showMenu*10 > 10;
+		}
 		
 		session = request.getSession();
 		session.setAttribute( "showList", showList );
-		session.setAttribute( "searchTubuyakiList", searchTubuyakiList );
+		session.setAttribute( "hasNext", hasNext );
 		session.setAttribute( "key", key );
 		RequestDispatcher rd = request.getRequestDispatcher( "/jsp/search.jsp" );
 		rd.forward( request, response );
@@ -111,12 +106,8 @@ public class Dokotubu extends HttpServlet {
 		
 		HttpSession session = request.getSession();
 		request.setCharacterEncoding( "UTF-8" );
-		ServletContext application = this.getServletContext();
 		
 		String userName = ( String ) session.getAttribute( "userName" );
-		
-		String userFile = getServletContext().getRealPath( "/WEB-INF/data/users.csv" );
-		String tubuyakiFile = getServletContext().getRealPath( "/WEB-INF/data/tubuyaki.csv" );
 		
 		int showSize = 10;
 		Tubuyaki[] showList = new Tubuyaki[ showSize ];
@@ -133,24 +124,28 @@ public class Dokotubu extends HttpServlet {
 				String pw = request.getParameter( "password" );
 			
 				User u = new User( un, pw );
-				UserLogic ul = new UserLogic( userFile );
+				UserLogic ul = new UserLogic();
 				int status = ul.loginCheck( u );
-					// 0でログイン成功、1は入力内容違い、2は空欄あり
+						// 0でログイン成功、1は入力内容違い、2は空欄あり
 			
 			
 				if ( status == 0 ) {
 				
-					List<Tubuyaki> tubuyakiList = new LinkedList<Tubuyaki>();
+					List<Tubuyaki> tubuyakiList = TubuyakiDAO.findAll();
 					int showMenu = 0;
-				
-					readDocument( tubuyakiList, tubuyakiFile );
+					
 					cutTubuyaki( tubuyakiList, showList, showMenu );
+					
+					boolean hasNext = false;
+					if ( !tubuyakiList.isEmpty() ) {
+						hasNext = tubuyakiList.size()-showMenu*10 > 10;
+					}
 				
 					session = request.getSession();
 					session.setAttribute( "userName", u.getUserName() );
 					session.setAttribute( "showList", showList );
 					session.setAttribute( "showMenu", showMenu );
-					application.setAttribute( "tubuyakiList", tubuyakiList );
+					session.setAttribute( "hasNext", hasNext );
 					response.sendRedirect( request.getContextPath() + "/jsp/main.jsp" );
 					return;
 				
@@ -191,9 +186,9 @@ public class Dokotubu extends HttpServlet {
 				String pw = request.getParameter( "password" );
 			
 				User u = new User( un, pw );
-				UserLogic ul = new UserLogic( userFile );
+				UserLogic ul = new UserLogic();
 				int status = ul.registerUser( u );
-					// 0で登録成功、1はユーザー名重複、2は空欄あり
+						// 0で登録成功、1はユーザー名重複、2は空欄あり
 				
 				
 				if ( status == 0 ) {
@@ -240,10 +235,16 @@ public class Dokotubu extends HttpServlet {
 		} else if ( !userName.isEmpty() ) {
 			
 			String action = ( String )request.getParameter( "action" );
-			List<Tubuyaki> tubuyakiList = ( List<Tubuyaki> )application.getAttribute( "tubuyakiList" );
-			List<Tubuyaki> searchTubuyakiList = ( List<Tubuyaki> )session.getAttribute( "searchTubuyakiList" );
+			List<Tubuyaki> tubuyakiList = TubuyakiDAO.findAll();
 			Integer showMenu = ( Integer )session.getAttribute( "showMenu" );
+			
 			String viewStatus = ( String )request.getParameter( "viewStatus" );
+			
+			List<Tubuyaki> searchTubuyakiList = null;
+			String key = ( String )session.getAttribute( "key" );
+			if ( key != null ) {
+				searchTubuyakiList = TubuyakiDAO.findByKeyword( key );
+			}
 			
 			
 			if ( ( "tweet" ).equals( action ) ) {
@@ -260,14 +261,18 @@ public class Dokotubu extends HttpServlet {
 					
 				}
 				
-				int maxNumber = countTubuyaki( tubuyakiList );
-				Tubuyaki t = new Tubuyaki( maxNumber+1, userName, body );
-				tubuyakiList.add( t );
-				writeDocument( tubuyakiList, tubuyakiFile );
+				Tubuyaki t = new Tubuyaki( userName, body );
+				TubuyakiDAO.insert( t );
+				tubuyakiList = TubuyakiDAO.findAll();
 				cutTubuyaki( tubuyakiList, showList, showMenu );
 				
-				application.setAttribute( "tubuyakiList", tubuyakiList );
+				boolean hasNext = false;
+				if ( !tubuyakiList.isEmpty() ) {
+					hasNext = tubuyakiList.size()-showMenu*10 > 10;
+				}
+				
 				session.setAttribute( "showList", showList );
+				session.setAttribute( "hasNext", hasNext );
 				RequestDispatcher rd = request.getRequestDispatcher( "/jsp/main.jsp" );
 				rd.forward( request, response );
 				return;
@@ -295,8 +300,15 @@ public class Dokotubu extends HttpServlet {
 				}
 				
 				cutTubuyaki( targetList, showList, showMenu );
+				
+				boolean hasNext = false;
+				if ( !tubuyakiList.isEmpty() ) {
+					hasNext = tubuyakiList.size()-showMenu*10 > 10;
+				}
+				
 				session.setAttribute( "showList", showList );
 				session.setAttribute( "showMenu", showMenu );
+				session.setAttribute( "hasNext", hasNext );
 				RequestDispatcher rd = request.getRequestDispatcher( targetJsp );
 				rd.forward( request, response );
 				return;
@@ -327,8 +339,15 @@ public class Dokotubu extends HttpServlet {
 				}
 				
 				cutTubuyaki( targetList, showList, showMenu );
+				
+				boolean hasNext = false;
+				if ( !tubuyakiList.isEmpty() ) {
+					hasNext = tubuyakiList.size()-showMenu*10 > 10;
+				}
+
 				session.setAttribute( "showList", showList );
 				session.setAttribute( "showMenu", showMenu );
+				session.setAttribute( "hasNext", hasNext );
 				RequestDispatcher rd = request.getRequestDispatcher( targetJsp );
 				rd.forward( request, response );
 				return;
@@ -336,10 +355,11 @@ public class Dokotubu extends HttpServlet {
 				
 			} else if ( ( "delete" ).equals( action ) ) {
 				
-				String[] di = request.getParameterValues( "delete" );
+				String[] deleteId = request.getParameterValues( "delete" );
+				List<Tubuyaki> targetList = null;
 				String targetJsp = null;
 				
-				if ( di == null ) {
+				if ( deleteId == null ) {
 					
 					if ( ( "all" ).equals( viewStatus ) ) {
 						targetJsp = "/jsp/main.jsp";
@@ -355,19 +375,31 @@ public class Dokotubu extends HttpServlet {
 					
 				}
 				
-				removeTubuyaki( tubuyakiList, searchTubuyakiList, di );
-				writeDocument( tubuyakiList, tubuyakiFile );
-				cutTubuyaki( tubuyakiList, showList, showMenu );
-				
-				application.setAttribute( "tubuyakiList", tubuyakiList );
-				session.setAttribute( "showList", showList );
+				removeFromDB( deleteId );
 				
 				if ( ( "all" ).equals( viewStatus ) ) {
+					tubuyakiList = TubuyakiDAO.findAll();
+					targetList = tubuyakiList;
 					targetJsp = "/jsp/main.jsp";
 				} else if ( ( "searching" ).equals( viewStatus ) ) {
+					searchTubuyakiList = TubuyakiDAO.findByKeyword( key );
+					targetList = searchTubuyakiList;
 					targetJsp = "/jsp/search.jsp";
 				}
 				
+				if ( showMenu > 0 && targetList.size() <= showMenu*10 ) {
+					showMenu --;
+					session.setAttribute( "showMenu", showMenu );
+				}
+				
+				boolean hasNext = false;
+				if ( !tubuyakiList.isEmpty() ) {
+					hasNext = tubuyakiList.size()-showMenu*10 > 10;
+				}
+				
+				cutTubuyaki( targetList, showList, showMenu );
+				session.setAttribute( "showList", showList );
+				session.setAttribute( "hasNext", hasNext );
 				RequestDispatcher rd = request.getRequestDispatcher( targetJsp );
 				rd.forward( request, response );
 				return;
@@ -379,9 +411,15 @@ public class Dokotubu extends HttpServlet {
 				
 				cutTubuyaki( tubuyakiList, showList, showMenu );
 				
+				boolean hasNext = false;
+				if ( !tubuyakiList.isEmpty() ) {
+					hasNext = tubuyakiList.size()-showMenu*10 > 10;
+				}
+				
 				session = request.getSession();
 				session.setAttribute( "showList", showList );
 				session.setAttribute( "showMenu", showMenu );
+				session.setAttribute( "hasNext", hasNext );
 				response.sendRedirect( request.getContextPath() + "/jsp/main.jsp" );
 				return;
 				
@@ -404,215 +442,36 @@ public class Dokotubu extends HttpServlet {
 		System.out.println("doPost最後まで来た");
 		
 	}
-	
-	
-	
-	public void readDocument( List<Tubuyaki> tubuyakiList, String tubuyakiFile ) {
-		
-		
-		File fn = new File( tubuyakiFile );
-		BufferedReader br = null;
-		
-		if ( fn != null ) {
-			
-			try {
-			
-				br = new BufferedReader( new FileReader( fn ) );
-				
-				String line;
-				while ( ( line = br.readLine() ) != null ) {
-					
-					if ( line.contains( "," ) ) {
-						String[] lines = line.split( "," );						
-						int num = Integer.parseInt( lines[0] );					
-						Tubuyaki t = new Tubuyaki( num, lines[1], lines[2] );
-						tubuyakiList.add( t );
-					}
-					
-				}
-				
-			} catch ( IOException e ) {
-				e.printStackTrace();
-				
-			} finally {
-				
-				try {
-					if ( br != null ) {
-						br.close();
-					}
-				} catch ( IOException e ) {
-					e.printStackTrace();
-				}
-				
-			}
-			
-		}
-		
-		
-	}
-	
-	
-	public void readAndSearch( List<Tubuyaki> searchTubuyakiList, String tubuyakiFile, String key ) {
-		
-		
-		File fn = new File( tubuyakiFile );
-		BufferedReader br = null;
-		
-		if ( fn != null ) {
-			
-			try {
-			
-				br = new BufferedReader( new FileReader( fn ) );
-				
-				String line;
-				while ( ( line = br.readLine() ) != null ) {
-					
-					if ( line.contains( "," ) ) {
-						
-						String[] lines = line.split( "," );
-						
-						if ( lines[1].contains( key ) || lines[2].contains( key ) ) {
-							int num = Integer.parseInt( lines[0] );
-							Tubuyaki t = new Tubuyaki( num, lines[1], lines[2] );
-							searchTubuyakiList.add( t );
-						}	
-					}
-				}
-				
-			} catch ( IOException e ) {
-				e.printStackTrace();
-				
-			} finally {
-				
-				try {
-					if ( br != null ) {
-						br.close();
-					}
-				} catch ( IOException e ) {
-					e.printStackTrace();
-				}
-			}	
-		}
-	}
+
 	
 	
 	public void cutTubuyaki( List<Tubuyaki> tubuyakiList, Tubuyaki[] showList, int showMenu ) {
 		
 		if ( !tubuyakiList.isEmpty() ) {
 			
-			int i = 0;
-			int start = tubuyakiList.size()-( showMenu*10+1 );
-			int end = tubuyakiList.size()-( showMenu+1 )*10;
-			while ( i < showList.length && start >= end && start >= 0 ) {
+			int start = showMenu*10;
+			for ( int i = 0; i < showList.length && start < tubuyakiList.size(); i ++ ) {
 				
 				if ( tubuyakiList.get( start ) != null ) {
 					showList[ i ] = tubuyakiList.get( start );
-					i ++;
-					start --;
+					start ++;
 				} else {
 					break;
 				}
-				
 			}
-		}	
-		
+		}
 	}
 	
 	
-	public int countTubuyaki( List<Tubuyaki> tubuyakiList ) {
+	public void removeFromDB( String[] deleteId ) {
 		
-		int maxNumber = 0;
-		
-		if ( !tubuyakiList.isEmpty() ) {
-			for ( Tubuyaki t : tubuyakiList ) {
-				if ( t.getId() > maxNumber ) {
-					maxNumber = t.getId();
-				}
-			}
-		}	
-		
-		return maxNumber;
-		
-	}
-	
-	
-	public void prevPage() {
-		
-		
-		
-	}
-	
-	
-	public void removeTubuyaki( List<Tubuyaki> tubuyakiList, List<Tubuyaki> searchTubuyakiList, String[] di ) {
-		
-		
-		for ( String s : di ) {
+		for ( String s : deleteId ) {
 			
 			int id = Integer.parseInt( s );
+			TubuyakiDAO.delete( id );
 			
-			// 全件リストからの削除
-			for ( int i = 0; i < tubuyakiList.size(); i ++ ) {
-				if ( id == tubuyakiList.get( i ).getId() ) {
-					tubuyakiList.remove( i );
-					break;
-				}
-			}
-		
-			// 検索結果リストからの削除
-			if ( searchTubuyakiList != null && !searchTubuyakiList.isEmpty() ) {
-				for ( int i = 0; i < searchTubuyakiList.size(); i ++ ) {
-					if ( id == searchTubuyakiList.get( i ).getId() ) {
-						searchTubuyakiList.remove( i );
-						break;
-					}	
-				}	
-			}
-		
-		
 		}
 	}
 	
 	
-	public String makeTubuyakiIndex( Tubuyaki t ) {
-		
-		String s = String.valueOf( t.getId() );
-		String k = s + "," + t.getUserName() + "," + t.getBody();
-		return k;
-		
-	}
-	
-	
-	public void writeDocument( List<Tubuyaki> tubuyakiList, String tubuyakiFile ) {
-		
-		
-		File file = new File( tubuyakiFile );
-		file.getParentFile().mkdirs();
-
-		PrintWriter pw = null;
-		
-		try {
-			
-			pw = new PrintWriter( new FileWriter( file ) );
-			
-			for ( Tubuyaki t : tubuyakiList ) {
-				String s = makeTubuyakiIndex( t );
-				
-				if ( s != null ) {
-					pw.println( s );
-				}
-			}
-			
-		} catch (IOException e) {
-			e.printStackTrace();
-			
-		} finally {
-			if ( pw != null ) {
-				pw.close();
-			}	
-		}
-		
-		
-	}
-
-
 }

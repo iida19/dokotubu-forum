@@ -6,29 +6,21 @@ import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.PrintWriter;
-import java.util.ArrayList;
 import java.util.List;
 
 
 public class UserLogic {
 	
-
-	String userFile;
-	
-	public UserLogic( String userFile ) {
-		this.userFile = userFile;
-	}
+	public UserLogic() {}
 	
 	
 	public int loginCheck( User u ) {
 		
-		List<User> userList = new ArrayList<User>();
+		List<User> userList = UserDAO.findAll();
 		
 		String userName = u.getUserName();
 		String password = u.getPassword();
 		int status = -1;			// 0でログイン成功、1は入力内容違い、2は空欄あり
-		
-		readDocument( userList, userFile );
 		
 		if ( userName != null && !userName.isEmpty() && password != null && !password.isEmpty() ) {
 			
@@ -51,14 +43,12 @@ public class UserLogic {
 	
 	public int registerUser( User u ) {
 		
-		List<User> userList = new ArrayList<User>();
+		List<User> userList = UserDAO.findAll();
 		
 		String userName = u.getUserName();
 		String password = u.getPassword();
 		int status = -1;			// 0で登録成功、1はユーザー名重複、2は空欄あり
 		boolean exists = false;
-		
-		readDocument( userList, userFile );
 		
 		if ( userName != null && !userName.isEmpty() && password != null && !password.isEmpty() ) {
 		
@@ -71,8 +61,7 @@ public class UserLogic {
 			}
 			
 			if ( exists == false ) {
-				userList.add( u );
-				writeDocument( userList, userFile );
+				UserDAO.insert( u );
 				status = 0;
 			}	
 			

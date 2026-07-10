@@ -8,13 +8,12 @@
 	}
 %>
 <%@ page import="java.util.List" %>
-<%@ page import="java.util.ArrayList" %>
+<%@ page import="java.util.LinkedList" %>
 <%@ page import="dokotubu.Tubuyaki" %>
 <%
-	List<Tubuyaki> tubuyakiList = ( List<Tubuyaki> )application.getAttribute( "tubuyakiList" );
 	Tubuyaki[] showList = ( Tubuyaki[] )session.getAttribute( "showList" );
 	Integer showMenu = ( Integer )session.getAttribute( "showMenu" );
-	int nextOrNot = tubuyakiList.size()-showMenu*10;
+	boolean hasNext = ( boolean )session.getAttribute( "hasNext" );
 %>
 <%
 	String em = ( String )request.getAttribute( "em" );
@@ -151,7 +150,7 @@
 					</form>
 				<% } %>
 		
-				<% if ( nextOrNot > 10 ) { %>
+				<% if ( hasNext ) { %>
 					<form action="<%=request.getContextPath() %>/Dokotubu" method="post">
 						<input type="hidden" name="viewStatus" value="all">
 						<button type="submit" name="action" value="nextPage">次へ</button>		

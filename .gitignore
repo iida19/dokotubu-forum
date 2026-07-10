@@ -4,3 +4,6 @@
 .settings/
 
 .vscode/
+
+*.mv.db
+*.trace.db
