@@ -28,25 +28,24 @@ JavaとServletとJSPで作成した一言つぶやき掲示板アプリです。
 - Servlet
 - JSP
 - HTML/CSS
+- H2 Database
+- JDBC
 - Apache Tomcat
 - Git/GitHub
 
 ## 学習内容
-- Java
-- Servlet/JSP
 - JavaBeans
 - MVCモデル
 - フォワード、リダイレクト
 - リクエストスコープ、セッションスコープ、アプリケーションスコープ
-- HTML/CSS
-- ファイル入出力
-- CSVファイル操作
+- JDBCによるデータベース操作
+- DAOパターン
+- CSVファイルからH2データベースへの移行
 - Git/GitHub
 
 ## 今後の更新予定
 - ユーザー名/つぶやき内容に絞った検索
 - コードのリファクタリング
-- データベース対応
 
 ## スクリーンショット
 
