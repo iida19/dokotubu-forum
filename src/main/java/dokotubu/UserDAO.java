@@ -1,27 +1,23 @@
 package dokotubu;
 
 import java.sql.Connection;
-import java.sql.DriverManager;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.util.ArrayList;
+import java.util.List;
 
 public class UserDAO {
 	
-	private static final String URL = "jdbc:h2:file:C:/pleiades/workspace/dokotubu/db/dokotubu";
-	private static final String USER = "sa";
-	private static final String PASSWORD = "";
 	
-	
-	public static ArrayList<User> findAll() {
+	public static List<User> findAll() {
 		
-		ArrayList<User> list = new ArrayList<User>();
+		List<User> list = new ArrayList<User>();
 		String sql = "SELECT * FROM users";
 		
 		try (
-			Connection con = DriverManager.getConnection( URL, USER, PASSWORD );
-            PreparedStatement pSt = con.prepareStatement( sql );
-            ResultSet rs = pSt.executeQuery()
+			Connection con = DBManager.getConnection();
+            PreparedStatement pstmt = con.prepareStatement( sql );
+            ResultSet rs = pstmt.executeQuery()
 		) {
 			
 			while ( rs.next() ) {
@@ -54,7 +50,7 @@ public class UserDAO {
 							"VALUES( ?, ? )";
 		
 		try (
-			Connection con = DriverManager.getConnection( URL, USER, PASSWORD );
+			Connection con = DBManager.getConnection();
 			PreparedStatement pstmt = con.prepareStatement( sql );
 		) {
 			pstmt.setString( 1, userName );

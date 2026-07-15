@@ -150,9 +150,5 @@ public class UserLogic {
 				pw.close();
 			}	
 		}
-		
-		
 	}
-	
-
 }

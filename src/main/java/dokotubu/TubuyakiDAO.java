@@ -1,26 +1,21 @@
 package dokotubu;
 
 import java.sql.Connection;
-import java.sql.DriverManager;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.util.ArrayList;
-import java.util.LinkedList;
+import java.util.List;
 
 public class TubuyakiDAO {
+
 	
-	private static final String URL = "jdbc:h2:file:C:/pleiades/workspace/dokotubu/db/dokotubu";
-	private static final String USER = "sa";
-	private static final String PASSWORD = "";
-	
-	
-	public static LinkedList<Tubuyaki> findAll() {
+	public static List<Tubuyaki> findAll() {
 		
-		LinkedList<Tubuyaki> list = new LinkedList<Tubuyaki>();
+		List<Tubuyaki> list = new ArrayList<Tubuyaki>();
 		String sql = "SELECT * FROM tubuyaki ORDER BY postdate DESC";
 		
 		try (
-				Connection con = DriverManager.getConnection( URL, USER, PASSWORD );
+				Connection con = DBManager.getConnection();
 	            PreparedStatement pstmt = con.prepareStatement( sql );
 	            ResultSet rs = pstmt.executeQuery()
 		) {
@@ -55,7 +50,7 @@ public class TubuyakiDAO {
 										// → H2が自動で入れてくれるので渡す必要なし
 		
 		try (
-			Connection con = DriverManager.getConnection( URL, USER, PASSWORD );
+			Connection con = DBManager.getConnection();
 			PreparedStatement pstmt = con.prepareStatement( sql );
 		) {
 			pstmt.setString( 1, userName );
@@ -69,16 +64,16 @@ public class TubuyakiDAO {
 	}
 	
 	
-	public static ArrayList<Tubuyaki> findByKeyword( String key ) {
+	public static List<Tubuyaki> findByKeyword( String key ) {
 		
-		ArrayList<Tubuyaki> list = new ArrayList<Tubuyaki>();
+		List<Tubuyaki> list = new ArrayList<Tubuyaki>();
 		String sql =	"SELECT * FROM tubuyaki " + 
 							"WHERE userName LIKE ? OR body LIKE ? " +
 							"ORDER BY postdate DESC";
 		String keyword = "%" + key + "%";
 		
 		try (
-			Connection con = DriverManager.getConnection( URL, USER, PASSWORD );
+			Connection con = DBManager.getConnection();
 			PreparedStatement pstmt = con.prepareStatement( sql );
 		) {
 			
@@ -111,7 +106,7 @@ public class TubuyakiDAO {
 		String sql =	"DELETE FROM tubuyaki WHERE id = ?";
 		
 		try (
-			Connection con = DriverManager.getConnection( URL, USER, PASSWORD );
+			Connection con = DBManager.getConnection();
 			PreparedStatement pstmt = con.prepareStatement( sql );
 		) {
 			pstmt.setInt( 1, id );

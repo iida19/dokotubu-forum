@@ -37,7 +37,7 @@ public class Dokotubu extends HttpServlet {
 		HttpSession session = request.getSession();
 		request.setCharacterEncoding( "UTF-8" );
 		
-	    String userName = ( String ) session.getAttribute( "userName" );
+	    String userName = ( String )session.getAttribute( "userName" );
 	    if ( userName == null ) {
 	        response.sendRedirect( request.getContextPath() + "/jsp/login.jsp" );
 	        return;
