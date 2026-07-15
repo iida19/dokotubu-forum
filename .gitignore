@@ -7,3 +7,5 @@
 
 *.mv.db
 *.trace.db
+src/main/webapp/WEB-INF/db/*.mv.db
+src/main/webapp/WEB-INF/db/*.trace.db

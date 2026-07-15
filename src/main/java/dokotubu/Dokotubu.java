@@ -1,7 +1,6 @@
 package dokotubu;
 
 import java.io.IOException;
-import java.util.List;
 
 import jakarta.servlet.RequestDispatcher;
 import jakarta.servlet.ServletException;
@@ -45,18 +44,18 @@ public class Dokotubu extends HttpServlet {
 	    }
 	    
 	    
+	    TubuyakiLogic tl = new TubuyakiLogic();
+	    
 		// Getデータ受け取り
 		String key = request.getParameter( "key" );
 		String viewStatus = request.getParameter( "viewStatus" );
 		
-		String targetJsp = null;
+		String targetJsp = "/jsp/search.jsp";
 		
 		if ( key == null || key.isEmpty() ) {
 			
 			if ( ( "all" ).equals( viewStatus ) ) {
 				targetJsp = "/jsp/main.jsp";
-			} else if ( ( "searching" ).equals( viewStatus ) ) {
-				targetJsp = "/jsp/search.jsp";
 			}
 			
 			String errorMessage = "検索キーワードが入力されていません！";
@@ -67,23 +66,10 @@ public class Dokotubu extends HttpServlet {
 			
 		}
 		
-		List<Tubuyaki> searchTubuyakiList = TubuyakiDAO.findByKeyword( key );
-		int showSize = 10;
-		Tubuyaki[] showList = new Tubuyaki[ showSize ];
-		int showMenu = 0;
+		PageData pd = tl.makeSearchedPage( key );
 		
-		cutTubuyaki( searchTubuyakiList, showList, showMenu );
-		
-		boolean hasNext = false;
-		if ( !searchTubuyakiList.isEmpty() ) {
-			hasNext = searchTubuyakiList.size()-showMenu*10 > 10;
-		}
-		
-		session = request.getSession();
-		session.setAttribute( "showList", showList );
-		session.setAttribute( "hasNext", hasNext );
-		session.setAttribute( "key", key );
-		RequestDispatcher rd = request.getRequestDispatcher( "/jsp/search.jsp" );
+		session.setAttribute( "pageData", pd );
+		RequestDispatcher rd = request.getRequestDispatcher( targetJsp );
 		rd.forward( request, response );
 		return;
 		
@@ -91,7 +77,7 @@ public class Dokotubu extends HttpServlet {
 	}
 
 
-	@SuppressWarnings("unchecked")
+
 	protected void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
 		
 		
@@ -107,10 +93,9 @@ public class Dokotubu extends HttpServlet {
 		HttpSession session = request.getSession();
 		request.setCharacterEncoding( "UTF-8" );
 		
-		String userName = ( String ) session.getAttribute( "userName" );
+		TubuyakiLogic tl = new TubuyakiLogic();
 		
-		int showSize = 10;
-		Tubuyaki[] showList = new Tubuyaki[ showSize ];
+		String userName = ( String ) session.getAttribute( "userName" );
 		
 		
 		if ( userName == null ) {
@@ -131,21 +116,10 @@ public class Dokotubu extends HttpServlet {
 			
 				if ( status == 0 ) {
 				
-					List<Tubuyaki> tubuyakiList = TubuyakiDAO.findAll();
-					int showMenu = 0;
-					
-					cutTubuyaki( tubuyakiList, showList, showMenu );
-					
-					boolean hasNext = false;
-					if ( !tubuyakiList.isEmpty() ) {
-						hasNext = tubuyakiList.size()-showMenu*10 > 10;
-					}
+					PageData pd = tl.makeDefaultPage();
 				
-					session = request.getSession();
 					session.setAttribute( "userName", u.getUserName() );
-					session.setAttribute( "showList", showList );
-					session.setAttribute( "showMenu", showMenu );
-					session.setAttribute( "hasNext", hasNext );
+					session.setAttribute( "pageData", pd );
 					response.sendRedirect( request.getContextPath() + "/jsp/main.jsp" );
 					return;
 				
@@ -235,16 +209,8 @@ public class Dokotubu extends HttpServlet {
 		} else if ( !userName.isEmpty() ) {
 			
 			String action = ( String )request.getParameter( "action" );
-			List<Tubuyaki> tubuyakiList = TubuyakiDAO.findAll();
-			Integer showMenu = ( Integer )session.getAttribute( "showMenu" );
-			
 			String viewStatus = ( String )request.getParameter( "viewStatus" );
-			
-			List<Tubuyaki> searchTubuyakiList = null;
-			String key = ( String )session.getAttribute( "key" );
-			if ( key != null ) {
-				searchTubuyakiList = TubuyakiDAO.findByKeyword( key );
-			}
+			PageData p = ( PageData )session.getAttribute( "pageData" );
 			
 			
 			if ( ( "tweet" ).equals( action ) ) {
@@ -261,18 +227,9 @@ public class Dokotubu extends HttpServlet {
 					
 				}
 				
-				Tubuyaki t = new Tubuyaki( userName, body );
-				TubuyakiDAO.insert( t );
-				tubuyakiList = TubuyakiDAO.findAll();
-				cutTubuyaki( tubuyakiList, showList, showMenu );
+				PageData pd = tl.makeTweetedPage( userName, body );
 				
-				boolean hasNext = false;
-				if ( !tubuyakiList.isEmpty() ) {
-					hasNext = tubuyakiList.size()-showMenu*10 > 10;
-				}
-				
-				session.setAttribute( "showList", showList );
-				session.setAttribute( "hasNext", hasNext );
+				session.setAttribute( "pageData", pd );
 				RequestDispatcher rd = request.getRequestDispatcher( "/jsp/main.jsp" );
 				rd.forward( request, response );
 				return;
@@ -280,35 +237,11 @@ public class Dokotubu extends HttpServlet {
 				
 			} else if ( ( "prevPage" ).equals( action ) ) {
 				
-				if ( showMenu > 0 ) {
-					showMenu --;
-				}
+				PageData pd = tl.makePrevPage( p, viewStatus );
 				
-				List<Tubuyaki> targetList = null;
-				String targetJsp = null;
+				String targetJsp = this.getTargetJsp( viewStatus );
 				
-				if ( ( "all" ).equals( viewStatus ) ) {
-					
-					targetList = tubuyakiList;
-					targetJsp = "/jsp/main.jsp";
-					
-				} else if ( ( "searching" ).equals( viewStatus ) ) {
-					
-					targetList = searchTubuyakiList;
-					targetJsp = "/jsp/search.jsp";
-					
-				}
-				
-				cutTubuyaki( targetList, showList, showMenu );
-				
-				boolean hasNext = false;
-				if ( !tubuyakiList.isEmpty() ) {
-					hasNext = tubuyakiList.size()-showMenu*10 > 10;
-				}
-				
-				session.setAttribute( "showList", showList );
-				session.setAttribute( "showMenu", showMenu );
-				session.setAttribute( "hasNext", hasNext );
+				session.setAttribute( "pageData", pd );
 				RequestDispatcher rd = request.getRequestDispatcher( targetJsp );
 				rd.forward( request, response );
 				return;
@@ -316,38 +249,11 @@ public class Dokotubu extends HttpServlet {
 				
 			} else if ( ( "nextPage" ).equals( action ) ) {
 			
-				int nextOrNot = 0;
-				List<Tubuyaki> targetList = null;
-				String targetJsp = null;
+				PageData pd = tl.makeNextPage( p, viewStatus );
 				
-				if ( ( "all" ).equals( viewStatus ) ) {
-					
-					nextOrNot = tubuyakiList.size()-showMenu*10;
-					targetList = tubuyakiList;
-					targetJsp = "/jsp/main.jsp";
-					
-				} else if ( ( "searching" ).equals( viewStatus ) ) {
-					
-					nextOrNot = searchTubuyakiList.size()-showMenu*10;
-					targetList = searchTubuyakiList;
-					targetJsp = "/jsp/search.jsp";
-					
-				}
-				
-				if ( nextOrNot > 10 ) {
-					showMenu ++;
-				}
-				
-				cutTubuyaki( targetList, showList, showMenu );
-				
-				boolean hasNext = false;
-				if ( !tubuyakiList.isEmpty() ) {
-					hasNext = tubuyakiList.size()-showMenu*10 > 10;
-				}
+				String targetJsp = this.getTargetJsp( viewStatus );
 
-				session.setAttribute( "showList", showList );
-				session.setAttribute( "showMenu", showMenu );
-				session.setAttribute( "hasNext", hasNext );
+				session.setAttribute( "pageData", pd );
 				RequestDispatcher rd = request.getRequestDispatcher( targetJsp );
 				rd.forward( request, response );
 				return;
@@ -356,16 +262,10 @@ public class Dokotubu extends HttpServlet {
 			} else if ( ( "delete" ).equals( action ) ) {
 				
 				String[] deleteId = request.getParameterValues( "delete" );
-				List<Tubuyaki> targetList = null;
-				String targetJsp = null;
+				
+				String targetJsp = this.getTargetJsp( viewStatus );
 				
 				if ( deleteId == null ) {
-					
-					if ( ( "all" ).equals( viewStatus ) ) {
-						targetJsp = "/jsp/main.jsp";
-					} else if ( ( "searching" ).equals( viewStatus ) ) {
-						targetJsp = "/jsp/search.jsp";
-					}
 					
 					String errorMessage = "削除するつぶやきが選択されていません！";
 					request.setAttribute( "em", errorMessage );
@@ -375,31 +275,9 @@ public class Dokotubu extends HttpServlet {
 					
 				}
 				
-				removeFromDB( deleteId );
+				PageData pd = tl.makeDeletedPage( p, deleteId, viewStatus );
 				
-				if ( ( "all" ).equals( viewStatus ) ) {
-					tubuyakiList = TubuyakiDAO.findAll();
-					targetList = tubuyakiList;
-					targetJsp = "/jsp/main.jsp";
-				} else if ( ( "searching" ).equals( viewStatus ) ) {
-					searchTubuyakiList = TubuyakiDAO.findByKeyword( key );
-					targetList = searchTubuyakiList;
-					targetJsp = "/jsp/search.jsp";
-				}
-				
-				if ( showMenu > 0 && targetList.size() <= showMenu*10 ) {
-					showMenu --;
-					session.setAttribute( "showMenu", showMenu );
-				}
-				
-				boolean hasNext = false;
-				if ( !tubuyakiList.isEmpty() ) {
-					hasNext = tubuyakiList.size()-showMenu*10 > 10;
-				}
-				
-				cutTubuyaki( targetList, showList, showMenu );
-				session.setAttribute( "showList", showList );
-				session.setAttribute( "hasNext", hasNext );
+				session.setAttribute( "pageData", pd );
 				RequestDispatcher rd = request.getRequestDispatcher( targetJsp );
 				rd.forward( request, response );
 				return;
@@ -407,19 +285,9 @@ public class Dokotubu extends HttpServlet {
 			
 			} else if ( ( "backAllList" ).equals( action ) ) {
 				
-				showMenu = 0;
+				PageData pd = tl.makeDefaultPage();
 				
-				cutTubuyaki( tubuyakiList, showList, showMenu );
-				
-				boolean hasNext = false;
-				if ( !tubuyakiList.isEmpty() ) {
-					hasNext = tubuyakiList.size()-showMenu*10 > 10;
-				}
-				
-				session = request.getSession();
-				session.setAttribute( "showList", showList );
-				session.setAttribute( "showMenu", showMenu );
-				session.setAttribute( "hasNext", hasNext );
+				session.setAttribute( "pageData", pd );
 				response.sendRedirect( request.getContextPath() + "/jsp/main.jsp" );
 				return;
 				
@@ -442,36 +310,21 @@ public class Dokotubu extends HttpServlet {
 		System.out.println("doPost最後まで来た");
 		
 	}
+	
+	
+	private String getTargetJsp( String viewStatus ) {
+		
+		String targetJsp;
+		
+		if ( ( "searching" ).equals( viewStatus ) ) {
+			targetJsp = "/jsp/search.jsp";
+		} else {
+			targetJsp = "/jsp/main.jsp";
+		}
+		
+		return targetJsp;
+		
+	}
 
-	
-	
-	public void cutTubuyaki( List<Tubuyaki> tubuyakiList, Tubuyaki[] showList, int showMenu ) {
-		
-		if ( !tubuyakiList.isEmpty() ) {
-			
-			int start = showMenu*10;
-			for ( int i = 0; i < showList.length && start < tubuyakiList.size(); i ++ ) {
-				
-				if ( tubuyakiList.get( start ) != null ) {
-					showList[ i ] = tubuyakiList.get( start );
-					start ++;
-				} else {
-					break;
-				}
-			}
-		}
-	}
-	
-	
-	public void removeFromDB( String[] deleteId ) {
-		
-		for ( String s : deleteId ) {
-			
-			int id = Integer.parseInt( s );
-			TubuyakiDAO.delete( id );
-			
-		}
-	}
-	
 	
 }

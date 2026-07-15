@@ -7,14 +7,14 @@
 		return;
 	}
 %>
-<%@ page import="java.util.List" %>
-<%@ page import="java.util.ArrayList" %>
 <%@ page import="dokotubu.Tubuyaki" %>
+<%@ page import="dokotubu.PageData" %>
 <%
-	Tubuyaki[] showList = ( Tubuyaki[] )session.getAttribute( "showList" );
-	Integer showMenu = ( Integer )session.getAttribute( "showMenu" );
-	boolean hasNext = ( boolean )session.getAttribute( "hasNext" );
-	String key = ( String )session.getAttribute( "key" );
+	PageData pd = ( PageData )session.getAttribute( "pageData" );
+	Integer showMenu = pd.getShowMenu();
+	Tubuyaki[] showList = pd.getShowList();
+	boolean hasNext = pd.isHasNext();
+	String key = pd.getKey();
 	if ( key == null ) {
 		key = "";
 	}
